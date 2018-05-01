@@ -1,37 +1,98 @@
-## Welcome to GitHub Pages
+# HTTP2.0之压测
 
-You can use the [editor on GitHub](https://github.com/jmichaelxu/jmichaelxu.github.io/edit/master/index.md) to maintain and preview the content for your website in Markdown files.
+## 压测数据对比
+模拟1,000,000 次请求：
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+#### 请求花费时间对比
+![Image](assets/images/pressure_test.png)
 
-### Markdown
+从上表中可以看出http2.0相对http1.1节省近28s的返回时间
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+#### cpu使用情况
 
-```markdown
-Syntax highlighted code block
+##### http1.1
+cpu(us+sy)平均：<span style="color:#ff6600;font-weight:bolder;">82.51%</span>
 
-# Header 1
-## Header 2
-### Header 3
+![Image](assets/images/http1.1-cpu.png)
 
-- Bulleted
-- List
+##### http2.0
+cpu(us+sy)平均：<span style="color:#009900;font-weight:bolder;">63.09%</span>
 
-1. Numbered
-2. List
+![Image](assets/images/http2.0-cpu.png)
 
-**Bold** and _Italic_ and `Code` text
+## 如何压测？
+测试http1.1是使用了apache的ab命令；
 
-[Link](url) and ![Image](src)
+测试http2.0是使用了nghttp2的h2load命令
+
+### 压测http1.x
+
+#### 软件安装
+##### 系统
+- windows
+  1. 下载文件
+
+      访问[apache for windows](https://www.apachehaus.com/cgi-bin/download.plx)
+  2. 安装文件
+
+      双击exe文件，一路向下
+  3. 配置环境变量
+
+      我的电脑----》右键“属性”---》高级系统设置---》环境变量---》系统变量
+      新建系统变量,变量名：APACHE_HOME,变量值：apache安装的目录；并修改Path的值（添加apache的系统变量）；
+- Linux
+    - Centos/RedHat
+      1. ``` yum install apache ```
+      2. ab是apache自带的命令，安装后可以直接使用
+    - Ubuntu/Debian
+      1. ``` apt-get install apache2 ```
+- OSX(darwin)
+  1. ```brew install apache2 ```
+    OSX系统默认已经安装了apache2，ab命令在/usr/sbin/ab
+
+#### 脚本运行
+
 ```
+  ab -k -t 180 -c 6 -n 1000000 http://172.16.37.66/index.html
+```
+- -k 使用http的 KeepAlive属性，保持连接处于活动状态
+- -t 超时时间
+- -c 并发数
+- -n 请求数量
 
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
+### 压测http2.0
+#### 软件安装
+  - Linux
+    - Centos/RedHat
+      - 6.8
+        1. 下载最新epel-release rpm
+        ```
+        wget http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
+        ```
+        2. 安装epel-release rpm
+        ```
+        rpm -Uvh epel-release*rpm
+        ```
+        3. 安装nghttp2
+          ```
+            yum install nghttp2
+          ```
+      - 7.x
+        1. 更新yum仓库
+          ```
+            yum update
+          ```
+        2. 安装nghttp2
+          ```
+            yum install nghttp2
+          ```
 
-### Jekyll Themes
+#### 脚本运行
+```
+  h2load -c 6 -T 180 -n 1000000 https://172.16.37.66/index.html
+```
+- -c 并发数
+- -T 超时时间限制
+- -n 请求数量
 
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/jmichaelxu/jmichaelxu.github.io/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+[HTTP2.0详细介绍](https://blog.csdn.net/xuzhimoaq/article/details/80105247)
